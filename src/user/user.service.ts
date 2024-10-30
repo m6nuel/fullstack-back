@@ -12,7 +12,10 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
   async create(createUserDto: CreateUserDto) {
-    await this.findByEmail(createUserDto.email);
+    const user = await this.findByEmail(createUserDto.email);
+    if (user) {
+      return user;
+    }
     return await this.userRepository.save(createUserDto);
   }
 
@@ -41,7 +44,7 @@ export class UserService {
     const user = await this.userRepository.findOneBy({ email });
     if (user) {
       // throw new BadRequestException('El usuario Ya existe');
-      return;
+      return user;
     }
   }
 }

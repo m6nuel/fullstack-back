@@ -224,3 +224,117 @@ import { User } from './entities/user.entity';
 })
 export class UserModule {}
 ```
+
+## Para validar una sesión de autenticación de Firebase (ReactFire) en tu backend con NestJS, puedes seguir estos pasos:
+
+1. Configurar Firebase Admin SDK en NestJS para validar el token de sesión.
+2. Enviar el token de autenticación desde tu frontend (React) al backend.
+3. Validar el token en NestJS y obtener los datos del usuario autenticado
+
+## Creamos un modulo de Auth, para mantener el codigo ordenado
+```
+nest g module auth
+```
+
+## Configura Firebase Admin SDK en NestJS
+```
+yarn add firebase-admin
+```
+Las credenciales para inicializar el SDK de Firebase Admin generalmente se colocan en un archivo JSON proporcionado por Firebase. Aquí te explico los pasos para configurarlo y dónde colocar el archivo de credenciales en un proyecto NestJS.
+
+## 1. Descargar el Archivo de Credenciales
+ - Ve a la Consola de Firebase.
+ - Selecciona tu proyecto.
+ - Dirígete a Configuración del proyecto (Project Settings).
+ - En la pestaña de Cuentas de servicio (Service accounts), haz clic en Generar una nueva clave privada.
+ - Firebase descargará un archivo JSON que contiene las credenciales. Guarda este archivo en un lugar seguro.
+
+## 2. Coloca el Archivo en tu Proyecto
+Coloca el archivo JSON de credenciales en un directorio seguro dentro de tu proyecto. Una buena práctica es mantener este archivo fuera de tu sistema de control de versiones (como Git) para protegerlo.
+
+Ejemplo
+Crea una carpeta en la raíz de tu proyecto llamada secrets o config y guarda el archivo JSON allí:
+```
+your-project/
+├── src/
+├── secrets/
+│   └── firebase-adminsdk.json
+└── package.json
+```
+
+## 3. Cargar el Archivo de Credenciales en Firebase Admin
+En el código de inicialización de Firebase Admin, proporciona la ruta al archivo de credenciales. Para mayor seguridad y flexibilidad, puedes cargar esta ruta desde una variable de entorno.
+
+Ejemplo de Inicialización con credential.cert()
+Modifica onModuleInit para que use el archivo de credenciales directamente:
+```
+// src/firebase/firebase-admin.service.ts
+import * as admin from 'firebase-admin';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import * as path from 'path';
+
+@Injectable()
+export class FirebaseAdminService implements OnModuleInit {
+  onModuleInit() {
+    admin.initializeApp({
+      credential: admin.credential.cert(
+        path.resolve(__dirname, '../../secrets/firebase-adminsdk.json')
+      ),
+    });
+  }
+
+  async verifyToken(token: string) {
+    try {
+      return await admin.auth().verifyIdToken(token);
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+}
+```
+
+## 4. Usar Variables de Entorno para Mayor Seguridad
+Para que el archivo de credenciales sea más seguro, puedes usar una variable de entorno para especificar su ruta. Esto evita que la ruta de las credenciales esté directamente en el código fuente.
+```
+FIREBASE_CREDENTIALS_PATH=./secrets/firebase-adminsdk.json
+```
+
+Carga la variable en el código usando process.env:
+```
+import * as admin from 'firebase-admin';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+@Injectable()
+export class FirebaseAdminService implements OnModuleInit {
+  onModuleInit() {
+    const credentialsPath = process.env.FIREBASE_CREDENTIALS_PATH;
+    admin.initializeApp({
+      credential: admin.credential.cert(credentialsPath),
+    });
+  }
+
+  async verifyToken(token: string) {
+    try {
+      return await admin.auth().verifyIdToken(token);
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+}
+```
+
+## 5. Asegúrate de Excluir el Archivo de Credenciales de Git
+Para proteger tus credenciales, agrega el archivo JSON al .gitignore para que no se suba a Git:
+```
+# Excluir credenciales de Firebase
+/secrets/firebase-adminsdk.json
+```
+# Resumen
+ - Descarga el archivo JSON de credenciales de Firebase.
+ - Colócalo en un directorio seguro dentro de tu proyecto (por ejemplo, secrets/).
+ - Carga el archivo en FirebaseAdminService usando admin.credential.cert() y proporciona la ruta.
+ - Usa variables de entorno para especificar la ruta del archivo y exclúyelo de Git para mayor seguridad.
+

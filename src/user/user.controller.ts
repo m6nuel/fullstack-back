@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { FirebaseAuthGuard } from 'src/auth/firebase-auth.guard';
 
 @Controller('user')
 export class UserController {
@@ -20,11 +22,13 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @UseGuards(FirebaseAuthGuard)
   @Get()
   findAll() {
     return this.userService.findAll();
   }
 
+  @UseGuards(FirebaseAuthGuard)
   @Get('/:id')
   findOne(@Param('id') id: number) {
     return this.userService.findOne(+id);
