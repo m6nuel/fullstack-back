@@ -40,7 +40,8 @@ export class UserService {
   async findByEmail(email: string) {
     const user = await this.userRepository.findOneBy({ email });
     if (user) {
-      throw new BadRequestException('El usuario Ya existe');
+      // throw new BadRequestException('El usuario Ya existe');
+      return;
     }
   }
 }
