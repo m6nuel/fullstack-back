@@ -1,8 +1,11 @@
+import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -19,4 +22,18 @@ export class Tema {
 
   @DeleteDateColumn()
   deleted: Date;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userEmail', referencedColumnName: 'email' })
+  user: User;
+
+  @Column()
+  userEmail: string;
 }
+
+// @ManyToOne(() => User)
+// @JoinColumn({ name: 'userEmail', referencedColumnName: 'email' })
+// user: User;
+
+// @Column()
+// userEmail: string;

@@ -325,6 +325,36 @@ export class FirebaseAdminService implements OnModuleInit {
   }
 }
 ```
+la configuracion usada fue esta
+```
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
+import * as admin from 'firebase-admin';
+// import * as path from 'path';
+
+@Injectable()
+export class FirebaseAuthService implements OnModuleInit {
+  onModuleInit() {
+    const credentialsPath = process.env.FIREBASE_CREDENTIALS_PATH;
+    admin.initializeApp({
+      credential: admin.credential.cert(credentialsPath),
+      // credential: admin.credential.cert(
+      //   path.resolve(
+      //     __dirname,
+      //     '../../secrets/fullstack-v1-1-firebase-adminsdk-3wgsz-ced31b877a.json',
+      //   ),
+      // ),
+    });
+  }
+
+  async verifyToken(token: string) {
+    try {
+      return await admin.auth().verifyIdToken(token);
+    } catch (error) {
+      throw new BadRequestException('invalid Token');
+    }
+  }
+}
+```
 
 ## 5. Asegúrate de Excluir el Archivo de Credenciales de Git
 Para proteger tus credenciales, agrega el archivo JSON al .gitignore para que no se suba a Git:
@@ -338,3 +368,66 @@ Para proteger tus credenciales, agrega el archivo JSON al .gitignore para que no
  - Carga el archivo en FirebaseAdminService usando admin.credential.cert() y proporciona la ruta.
  - Usa variables de entorno para especificar la ruta del archivo y exclúyelo de Git para mayor seguridad.
 
+## Creamos un authGuard firebase-auth.guard.ts
+```
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { FirebaseAuthService } from './firebase-auth.service';
+
+@Injectable()
+export class FirebaseAuthGuard implements CanActivate {
+  constructor(private readonly firebaseAuthService: FirebaseAuthService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const authHeader = request.headers['authorization'];
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header is missing');
+    }
+
+    const token = authHeader.split(' ')[1];
+    try {
+      const decodedToken = await this.firebaseAuthService.verifyToken(token);
+      request.user = decodedToken;
+      return true;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+}
+```
+Este guard verifica si una solicitud contiene un token de Firebase válido en el encabezado de autorización. Si el token es válido, el acceso se permite; si no, se lanza una excepción de no autorizado.
+
+### De esta manera usamos el guard en las peticiones que queremos proteger
+lo usamos en el controlador:
+```
+  @UseGuards(FirebaseAuthGuard)
+  @Get()
+  findAll() {
+    return this.userService.findAll();
+  }
+
+  @UseGuards(FirebaseAuthGuard)
+  @Get('/:id')
+  findOne(@Param('id') id: number) {
+    return this.userService.findOne(+id);
+  }
+```
+
+## Tambien necesitamos un decorador para extraer el usuario en las peticiones que lo requiera
+para esto lo hacemos de la siguiente manera
+```
+import { ExecutionContext, createParamDecorator } from '@nestjs/common';
+
+export const ActiveUser = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.user;
+  },
+);
+```
+El ActiveUser simplifica la extracción del usuario autenticado en los controladores, evitando tener que acceder manualmente a request.user en cada método de controlador que lo necesite.

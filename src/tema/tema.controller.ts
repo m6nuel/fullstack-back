@@ -1,15 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { TemaService } from './tema.service';
 import { CreateTemaDto } from './dto/create-tema.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
+import { FirebaseAuthGuard } from 'src/auth/firebase-auth.guard';
+import { ActiveUser } from 'src/common/decorator/activeuser.decorator';
+import { UserActiveInterface } from 'src/common/interfaces/useractive.interface';
 
 @Controller('tema')
 export class TemaController {
   constructor(private readonly temaService: TemaService) {}
 
+  @UseGuards(FirebaseAuthGuard)
   @Post()
-  create(@Body() createTemaDto: CreateTemaDto) {
-    return this.temaService.create(createTemaDto);
+  create(
+    @Body() createTemaDto: CreateTemaDto,
+    @ActiveUser() user: UserActiveInterface,
+  ) {
+    return this.temaService.create(createTemaDto, user);
   }
 
   @Get()

@@ -4,6 +4,7 @@ import { UpdateTemaDto } from './dto/update-tema.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Tema } from './entities/tema.entity';
 import { Repository } from 'typeorm';
+import { UserActiveInterface } from 'src/common/interfaces/useractive.interface';
 
 @Injectable()
 export class TemaService {
@@ -11,8 +12,12 @@ export class TemaService {
     @InjectRepository(Tema)
     private readonly temarepository: Repository<Tema>,
   ) {}
-  async create(createTemaDto: CreateTemaDto) {
-    return await this.temarepository.save(createTemaDto);
+  async create(createTemaDto: CreateTemaDto, user: UserActiveInterface) {
+    const tema = this.temarepository.create({
+      ...createTemaDto,
+      userEmail: user.email,
+    });
+    return await this.temarepository.save(tema);
   }
 
   async findAll() {

@@ -1,8 +1,10 @@
+// import { Tema } from 'src/tema/entities/tema.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  // OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -11,7 +13,7 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true, nullable: false })
   email: string;
 
   @CreateDateColumn()
@@ -19,4 +21,7 @@ export class User {
 
   @DeleteDateColumn()
   deleted: Date;
+
+  // @OneToMany(() => Tema, (tema) => tema.user)
+  // temas: Tema[];
 }
