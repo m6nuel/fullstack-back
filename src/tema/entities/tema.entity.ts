@@ -1,3 +1,4 @@
+import { Subtema } from 'src/subtema/entities/subtema.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
@@ -6,6 +7,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -29,6 +31,9 @@ export class Tema {
 
   @Column()
   userEmail: string;
+
+  @OneToMany(() => Subtema, (subtema) => subtema.tema)
+  subtema: Subtema[];
 }
 
 // @ManyToOne(() => User)

@@ -6,15 +6,18 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { SubtemaService } from './subtema.service';
 import { CreateSubtemaDto } from './dto/create-subtema.dto';
 import { UpdateSubtemaDto } from './dto/update-subtema.dto';
+import { FirebaseAuthGuard } from 'src/auth/firebase-auth.guard';
 
 @Controller('subtema')
 export class SubtemaController {
   constructor(private readonly subtemaService: SubtemaService) {}
 
+  @UseGuards(FirebaseAuthGuard)
   @Post()
   create(@Body() createSubtemaDto: CreateSubtemaDto) {
     return this.subtemaService.create(createSubtemaDto);

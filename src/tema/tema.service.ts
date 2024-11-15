@@ -21,7 +21,7 @@ export class TemaService {
   }
 
   async findAll() {
-    const temas = await this.temarepository.find();
+    const temas = await this.temarepository.find({ relations: ['subtema'] });
     if (!temas) {
       throw new BadRequestException('No hay temas');
     }
@@ -29,7 +29,10 @@ export class TemaService {
   }
 
   async findOne(id: number) {
-    const tema = await this.temarepository.findOneBy({ id });
+    const tema = await this.temarepository.findOne({
+      where: { id },
+      relations: ['subtema'],
+    });
     if (!tema) {
       throw new BadRequestException('No se encontro el tema');
     }
